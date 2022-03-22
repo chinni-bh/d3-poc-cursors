@@ -16,16 +16,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'd3-user-interactions'`, () => {
+  it(`should have as title 'line-chart'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('d3-user-interactions');
+    expect(app.title).toEqual('line-chart');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('d3-user-interactions app is running!');
+    expect(compiled.querySelector('.content span').textContent).toContain('line-chart app is running!');
   });
 });

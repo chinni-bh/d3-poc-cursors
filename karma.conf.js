@@ -25,7 +25,7 @@ module.exports = function (config) {
       suppressAll: true // removes the duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/d3-user-interactions'),
+      dir: require('path').join(__dirname, './coverage/line-chart'),
       subdir: '.',
       reporters: [
         { type: 'html' },

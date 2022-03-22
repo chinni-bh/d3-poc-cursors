@@ -1,26 +1,17 @@
 import { Component, OnInit } from '@angular/core';
-
 import * as d3Selection from 'd3-selection';
-
 import * as d3Scale from 'd3-scale';
-
 import * as d3Shape from 'd3-shape';
-
 import * as d3Array from 'd3-array';
-
 import * as d3Axis from 'd3-axis';
-
-import {SpectrumData} from "../shared/spectrum-data"
-
-// import { MachineData } from "../shared/machine-data"
+import { WaveformData } from "../shared/machine-data"
 
 @Component({
-  selector: 'app-line-chart',
-  templateUrl: './line-chart.component.html',
-  styleUrls: ['./line-chart.component.scss']
+  selector: 'app-waveform',
+  templateUrl: './waveform.component.html',
+  styleUrls: ['./waveform.component.scss']
 })
-export class LineChartComponent implements OnInit {
-
+export class WaveformComponent implements OnInit {
  private margin = { top: 20, right: 20, bottom: 30, left: 50 };
  private width: number;
  private height: number;
@@ -54,8 +45,8 @@ export class LineChartComponent implements OnInit {
  private initAxis() {
   this.x = d3Scale.scaleLinear().range([0, this.width]);
   this.y = d3Scale.scaleLinear().range([this.height, 0]);
-  this.x.domain(d3Array.extent(SpectrumData, (d) => d.x_value));
-  this.y.domain(d3Array.extent(SpectrumData, (d) => d.y_value));
+  this.x.domain(d3Array.extent(WaveformData, (d) => d.x_value));
+  this.y.domain(d3Array.extent(WaveformData, (d) => d.y_value));
  }
 
  private drawAxis() {
@@ -86,7 +77,7 @@ export class LineChartComponent implements OnInit {
 
   this.svg
     .append('path')
-    .datum(SpectrumData)
+    .datum(WaveformData)
     .attr('class', 'line')
     .attr("d", this.line)
     .style("fill", "none")

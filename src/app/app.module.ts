@@ -3,12 +3,18 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
 import { LineChartComponent } from './line-chart/line-chart.component';
-import { LineZoomComponent } from './line-zoom/line-zoom.component';
-import { BrushZoomComponent } from './brush-zoom/brush-zoom.component';
+import { WaveformComponent } from './waveform/waveform.component';
+
 @NgModule({
-  declarations: [AppComponent, LineChartComponent, LineZoomComponent, BrushZoomComponent],
-  imports: [BrowserModule],
+  declarations: [
+    AppComponent,
+    LineChartComponent,
+    WaveformComponent
+  ],
+  imports: [
+    BrowserModule
+  ],
   providers: [],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent]
 })
-export class AppModule {}
+export class AppModule { }
