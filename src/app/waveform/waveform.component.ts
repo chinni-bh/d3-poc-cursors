@@ -12,7 +12,7 @@ import { WaveformData } from "../shared/machine-data"
   styleUrls: ['./waveform.component.scss']
 })
 export class WaveformComponent implements OnInit {
- private margin = { top: 20, right: 20, bottom: 30, left: 50 };
+ private margin = { top: 200, right: 200, bottom: 300, left: 500 };
  private width: number;
  private height: number;
  private x: any;

@@ -1,6 +1,6 @@
 export interface Data{
-    x_value: Number,
-    y_value: Number
+    x_value: number,
+    y_value: number
 }
 
 export const SpectrumData:Data[]=[
