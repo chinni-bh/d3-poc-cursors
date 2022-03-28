@@ -1,13 +1,21 @@
-import {
-  Component,
-  ViewEncapsulation,
-  OnInit,
-  HostListener,
-} from '@angular/core';
+import { Component, ViewEncapsulation, OnInit } from '@angular/core';
 
-import * as d3 from 'd3';
-import { STOCKS } from '../shared/stocks';
+import * as d3 from 'd3-selection';
 import * as d3Scale from 'd3-scale';
+import * as d3Shape from 'd3-shape';
+import * as d3Axis from 'd3-axis';
+import * as d3Zoom from 'd3-zoom';
+import * as d3Brush from 'd3-brush';
+import * as d3Array from 'd3-array';
+import * as d3TimeFormat from 'd3-time-format';
+
+import { SP500 } from '../shared/SP500';
+import { Margin } from '../shared/stocks';
+
+interface Stock {
+  date: Date;
+  price: number;
+}
 
 @Component({
   selector: 'app-line-zoom',
@@ -16,149 +24,206 @@ import * as d3Scale from 'd3-scale';
   styleUrls: ['./line-zoom.component.css'],
 })
 export class LineZoomComponent implements OnInit {
-  title = 'Line Chart';
-  private data = STOCKS;
-  private idleTimeout: any;
-  private line: any;
-  private brush: any;
-  private clip: any;
-  private svg: any;
+  title = 'Brush & Zoom';
+
+  private margin!: Margin;
+  private margin2!: Margin;
+
+  private width!: number;
+  private height!: number;
+  private height2!: number;
+
+  private svg: any; // TODO replace all `any` by the right type
+
   private x: any;
+  private x2: any;
   private y: any;
+  private y2: any;
+
   private xAxis: any;
+  private xAxis2: any;
   private yAxis: any;
-  private margin = { top: 10, right: 30, bottom: 30, left: 60 };
-  private width = 460 - this.margin.left - this.margin.right;
-  private height = 400 - this.margin.top - this.margin.bottom;
-  ngOnInit(): void {
-    this.svg = d3
-      .select('#my_dataviz')
-      .append('svg')
-      .attr('width', this.width + this.margin.left + this.margin.right)
-      .attr('height', this.height + this.margin.top + this.margin.bottom)
-      .append('g')
-      .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
-    this.initChart();
+
+  private context: any;
+  private brush: any;
+  private zoom: any;
+  private area: any;
+  private area2: any;
+  private focus: any;
+
+  private parseDate = d3TimeFormat.timeParse('%b %Y');
+
+  constructor() {}
+
+  ngOnInit() {
+    this.initMargins();
+    this.initSvg();
+    this.drawChart(this.parseData(SP500));
   }
-  private parse(d: any) {
-    return { date: d3.timeParse('%Y-%m-%d')(d.date), value: d.value };
+
+  private initMargins() {
+    this.margin = { top: 20, right: 20, bottom: 110, left: 40 };
+    this.margin2 = { top: 430, right: 20, bottom: 30, left: 40 };
   }
-  private initChart() {
-    this.parse(this.data);
-    this.x = d3Scale.scaleTime().range([0, this.width]);
-    this.x.domain(
-      d3.extent(this.data, (d) => {
-        return d.date;
-      })
+
+  private parseData(data: any[]): Stock[] {
+    return data.map(
+      (v) => <Stock>(<unknown>{ date: this.parseDate(v.date), price: v.price })
     );
+  }
 
-    this.xAxis = this.svg
-      .append('g')
-      .attr('transform', `translate(0, ${this.height})`)
-      .call(d3.axisBottom(this.x));
+  private initSvg() {
+    this.svg = d3.select('svg');
 
-    this.y = d3Scale
-      .scaleLinear()
-      .domain([
-        0,
-        d3.max(this.data, (d: any) => {
-          return d.value;
-        }),
-      ])
-      .range([this.height, 0]);
+    this.width = +this.svg.attr('width') - this.margin.left - this.margin.right;
+    this.height =
+      +this.svg.attr('height') - this.margin.top - this.margin.bottom;
+    this.height2 =
+      +this.svg.attr('height') - this.margin2.top - this.margin2.bottom;
 
-    this.yAxis = this.svg.append('g').call(d3.axisLeft(this.y));
+    this.x = d3Scale.scaleTime().range([0, this.width]);
+    this.x2 = d3Scale.scaleTime().range([0, this.width]);
+    this.y = d3Scale.scaleLinear().range([this.height, 0]);
+    this.y2 = d3Scale.scaleLinear().range([this.height2, 0]);
 
-    this.clip = this.svg
-      .append('defs')
-      .append('svg:clipPath')
-      .attr('id', 'clip')
-      .append('svg:rect')
-      .attr('width', this.width)
-      .attr('height', this.height)
-      .attr('x', 0)
-      .attr('y', 0);
+    this.xAxis = d3Axis.axisBottom(this.x);
+    this.xAxis2 = d3Axis.axisBottom(this.x2);
+    this.yAxis = d3Axis.axisLeft(this.y);
 
-    this.brush = d3
+    this.brush = d3Brush
       .brushX()
+      .extent([
+        [0, 0],
+        [this.width, this.height2],
+      ])
+      .on('brush end', this.brushed.bind(this));
+
+    this.zoom = d3Zoom
+      .zoom()
+      .scaleExtent([1, Infinity])
+      .translateExtent([
+        [0, 0],
+        [this.width, this.height],
+      ])
       .extent([
         [0, 0],
         [this.width, this.height],
       ])
-      .on('end', this.updateChart);
+      .on('zoom', this.zoomed.bind(this));
 
-    this.line = this.svg.append('g').attr('clip-path', 'url(#clip)');
-    this.line
+    this.area = d3Shape
+      .area()
+      .curve(d3Shape.curveMonotoneX)
+      .x((d: any) => this.x(d.date))
+      .y0(this.height)
+      .y1((d: any) => this.y(d.price));
+
+    this.area2 = d3Shape
+      .area()
+      .curve(d3Shape.curveMonotoneX)
+      .x((d: any) => this.x2(d.date))
+      .y0(this.height2)
+      .y1((d: any) => this.y2(d.price));
+
+    this.svg
+      .append('defs')
+      .append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('width', this.width)
+      .attr('height', this.height);
+
+    this.focus = this.svg
+      .append('g')
+      .attr('class', 'focus')
+      .attr(
+        'transform',
+        'translate(' + this.margin.left + ',' + this.margin.top + ')'
+      );
+
+    this.context = this.svg
+      .append('g')
+      .attr('class', 'context')
+      .attr(
+        'transform',
+        'translate(' + this.margin2.left + ',' + this.margin2.top + ')'
+      );
+  }
+
+  private brushed(event: any) {
+    if (event.sourceEvent && event.sourceEvent.type === 'zoom') return; // ignore brush-by-zoom
+    let s = event.selection || this.x2.range();
+    this.x.domain(s.map(this.x2.invert, this.x2));
+    this.focus.select('.area').attr('d', this.area);
+    this.focus.select('.axis--x').call(this.xAxis);
+    this.svg
+      .select('.zoom')
+      .call(
+        this.zoom.transform,
+        d3Zoom.zoomIdentity
+          .scale(this.width / (s[1] - s[0]))
+          .translate(-s[0], 0)
+      );
+  }
+
+  private zoomed(event: any) {
+    if (event.sourceEvent && event.sourceEvent.type === 'brush') return; // ignore zoom-by-brush
+    let t = event.transform;
+    this.x.domain(t.rescaleX(this.x2).domain());
+    this.focus.select('.area').attr('d', this.area);
+    this.focus.select('.axis--x').call(this.xAxis);
+    this.context
+      .select('.brush')
+      .call(this.brush.move, this.x.range().map(t.invertX, t));
+  }
+
+  private drawChart(data: Stock[]) {
+    this.x.domain(d3Array.extent(data, (d: Stock) => d.date));
+    this.y.domain([0, d3Array.max(data, (d: Stock) => d.price)]);
+    this.x2.domain(this.x.domain());
+    this.y2.domain(this.y.domain());
+
+    this.focus
       .append('path')
-      .datum(this.data)
-      .attr('class', 'line') // I add the class line to be able to modify this line later on.
-      .attr('fill', 'none')
-      .attr('stroke', 'steelblue')
-      .attr('stroke-width', 1.5)
-      .attr(
-        'd',
-        d3
-          .line()
-          .x((d: any) => {
-            return this.x(d.date);
-          })
-          .y((d: any) => {
-            return this.y(d.value);
-          })
-      );
-    this.line.append('g').attr('class', 'brush').call(this.brush);
+      .datum(data)
+      .attr('class', 'area')
+      .attr('d', this.area);
 
-    this.svg.on('dblclick', () => {
-      this.x.domain(
-        d3.extent(this.data, (d) => {
-          return d.date;
-        })
-      );
-      this.xAxis.transition().call(d3.axisBottom(this.x));
-      this.line
-        .select('.line')
-        .transition()
-        .attr(
-          'd',
-          d3
-            .line()
-            .x((d: any) => {
-              return this.x(d.date);
-            })
-            .y((d: any) => {
-              return this.y(d.value);
-            })
-        );
-    });
-  }
-  private updateChart(event: any): any {
-    let extent = event.selector;
-    if (!extent) {
-      if (!this.idleTimeout)
-        return (this.idleTimeout = setTimeout(this.idled, 350)); // This allows to wait a little bit
-      this.x.domain([4, 8]);
-    } else {
-      this.x.domain([this.x.invert(extent[0]), this.x.invert(extent[1])]);
-      this.line.select('.brush').call(this.brush.move, null); // This remove the grey brush area as soon as the selection has been done
-    }
-    this.xAxis.transition().duration(1000).call(d3.axisBottom(this.x));
-    this.line
-      .select('.line')
-      .transition()
-      .duration(1000)
+    this.focus
+      .append('g')
+      .attr('class', 'axis axis--x')
+      .attr('transform', 'translate(0,' + this.height + ')')
+      .call(this.xAxis);
+
+    this.focus.append('g').attr('class', 'axis axis--y').call(this.yAxis);
+
+    this.context
+      .append('path')
+      .datum(data)
+      .attr('class', 'area')
+      .attr('d', this.area2);
+
+    this.context
+      .append('g')
+      .attr('class', 'axis axis--x')
+      .attr('transform', 'translate(0,' + this.height2 + ')')
+      .call(this.xAxis2);
+
+    this.context
+      .append('g')
+      .attr('class', 'brush')
+      .call(this.brush)
+      .call(this.brush.move, this.x.range());
+
+    this.svg
+      .append('rect')
+      .attr('class', 'zoom')
+      .attr('width', this.width)
+      .attr('height', this.height)
       .attr(
-        'd',
-        d3
-          .line()
-          .x((d: any) => {
-            return this.x(d.date);
-          })
-          .y((d: any) => {
-            return this.y(d.value);
-          })
-      );
-  }
-  private idled() {
-    this.idleTimeout = null;
+        'transform',
+        'translate(' + this.margin.left + ',' + this.margin.top + ')'
+      )
+      .call(this.zoom);
   }
 }
