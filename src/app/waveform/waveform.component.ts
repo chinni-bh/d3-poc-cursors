@@ -8,6 +8,7 @@ import { WaveformData } from '../shared/machine-data';
 import { SpectrumData } from '../shared/spectrum-data';
 import * as d3 from 'd3';
 import { BehaviorSubject } from 'rxjs';
+import { ThisReceiver } from '@angular/compiler';
 
 @Component({
   selector: 'app-waveform',
@@ -24,6 +25,7 @@ export class WaveformComponent implements OnInit {
   X: any;
   cursor_readout: any;
   basic_cursor_A: any;
+  cursor_A_postion: number = 400;
   basic_cursor_B: any;
   current_cursor: any;
   c_id: number = 0;
@@ -51,7 +53,7 @@ export class WaveformComponent implements OnInit {
   private initSvg() {
     this.svg = d3Selection
       .select('svg')
-      .on('click', (event: any) => this.mouseClick(event))
+      // .on('click', (event: any) => this.mouseClick(event))
       .append('g')
       .attr(
         'transform',
@@ -91,27 +93,62 @@ export class WaveformComponent implements OnInit {
       .attr('class', 'line')
       .attr('d', this.line)
       .style('fill', 'none')
-      .style('stroke', '#CC0000')
-      .style('stroke-width', '1');
+      .style('stroke', 'black')
+      .style('stroke-width', '0.5');
+  }
+
+  private renderCursor() {
+    this.basic_cursor_A = this.svg
+      .append('g')
+      .selectAll('.cursor')
+      .data([1])
+      .enter()
+      .append('image')
+      .attr('xlink:href', '../../assets/star-e.svg')
+      .style('width', '12px')
+      .style('height', '30px')
+      .attr('x', this.x(WaveformData[this.cursor_A_postion].x_value) - 5)
+      .attr('y', this.y(WaveformData[this.cursor_A_postion].y_value) - 5)
+      .on('click', (event: any) => this.mouseClick(event));
+    this.X = WaveformData.map((data) => data.x_value);
+  }
+
+  public renderNewCursor() {
+    this.cursor_A_postion += 10;
+    this.basic_cursor_B = this.svg
+      .append('g')
+      .selectAll('.cursor')
+      .data([1])
+      .enter()
+      .append('image')
+      .attr('xlink:href', '../../assets/star.svg')
+      .style('width', '13px')
+      .style('height', '30px')
+      .attr('x', this.x(WaveformData[this.cursor_A_postion].x_value) - 6)
+      .attr('y', this.y(WaveformData[this.cursor_A_postion].y_value) - 15)
+      .on('click', (event: any) => this.mouseClick(event));
   }
 
   public mouseClick = (event: any) => {
-    this.X = WaveformData.map((data) => data.x_value);
+    // alert();
     //index of nearest clicked x-value
-    let index = d3.bisectCenter(
-      this.X,
-      this.x.invert(d3.pointer(event)[0] - 49)
-    );
-    let x_coordinates = +WaveformData[index].x_value;
+    // let index = d3.bisectCenter(
+    //   this.X,
+    //   this.x.invert(d3.pointer(event)[0] - 49)
+    // );
+    // let x_coordinates = +WaveformData[index].x_value;
+
+    let x_coordinates = +WaveformData[this.cursor_A_postion].x_value;
 
     console.log('coordinates x', x_coordinates);
-    // console.log(d3.bisectCenter(this.X, 15.992)); //2047 - this.X.length-1
     //index of first, right-side-band
     let index1 = d3.bisectCenter(this.X, x_coordinates + this.deltaForSideband);
     let nextXValSideBand = x_coordinates + this.deltaForSideband;
 
-    while (index1 < this.X.length - 1) {
+    while (nextXValSideBand < this.X[this.X.length - 1]) {
       index1 = d3.bisectCenter(this.X, nextXValSideBand);
+      console.log(index1, nextXValSideBand);
+
       this.svg
         .append('g')
         .selectAll('.cursor')
@@ -128,7 +165,7 @@ export class WaveformComponent implements OnInit {
 
     index1 = d3.bisectCenter(this.X, x_coordinates + this.deltaForSideband);
     let prevXValSideBand = x_coordinates - this.deltaForSideband;
-    while (index1 > 0) {
+    while (prevXValSideBand > this.X[0]) {
       index1 = d3.bisectCenter(this.X, prevXValSideBand);
       this.svg
         .append('g')
@@ -145,31 +182,6 @@ export class WaveformComponent implements OnInit {
     }
     console.log(this.index, 'this.index basic');
   };
-
-  private renderCursor() {
-    this.basic_cursor_A = this.svg
-      .append('g')
-      .selectAll('.cursor')
-      .data([1])
-      .enter()
-      .append('image')
-      .attr('xlink:href', '../../assets/circle.svg')
-      .style('width', '10px')
-      .style('height', '10px')
-      .attr('x', this.x(WaveformData[500].x_value) - 5)
-      .attr('y', this.y(WaveformData[500].y_value) - 5);
-    // this.basic_cursor_B = this.svg
-    //   .append('g')
-    //   .selectAll('.cursor')
-    //   .data([1])
-    //   .enter()
-    //   .append('image')
-    //   .attr('xlink:href', '../../assets/circle.svg')
-    //   .style('width', '10px')
-    //   .style('height', '10px')
-    //   .attr('x', this.x(WaveformData[700].x_value) - 5)
-    //   .attr('y', this.y(WaveformData[700].y_value) - 5);
-  }
 
   public ToggleEnable() {
     let harmonic_index = 0;
