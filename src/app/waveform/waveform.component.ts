@@ -26,6 +26,7 @@ export class WaveformComponent implements OnInit {
   cursor_readout: any;
   basic_cursor_A: any;
   cursor_A_postion: number = 400;
+  cursor_B_postion: number = 500;
   basic_cursor_B: any;
   current_cursor: any;
   c_id: number = 0;
@@ -105,6 +106,7 @@ export class WaveformComponent implements OnInit {
       .enter()
       .append('image')
       .attr('xlink:href', '../../assets/star-e.svg')
+      .attr('id', 'A')
       .style('width', '12px')
       .style('height', '30px')
       .attr('x', this.x(WaveformData[this.cursor_A_postion].x_value) - 5)
@@ -114,7 +116,7 @@ export class WaveformComponent implements OnInit {
   }
 
   public renderNewCursor() {
-    this.cursor_A_postion += 10;
+    // this.cursor_A_postion += 10;
     this.basic_cursor_B = this.svg
       .append('g')
       .selectAll('.cursor')
@@ -122,10 +124,11 @@ export class WaveformComponent implements OnInit {
       .enter()
       .append('image')
       .attr('xlink:href', '../../assets/star.svg')
+      .attr('id', 'B')
       .style('width', '13px')
       .style('height', '30px')
-      .attr('x', this.x(WaveformData[this.cursor_A_postion].x_value) - 6)
-      .attr('y', this.y(WaveformData[this.cursor_A_postion].y_value) - 15)
+      .attr('x', this.x(WaveformData[this.cursor_B_postion].x_value) - 6)
+      .attr('y', this.y(WaveformData[this.cursor_B_postion].y_value) - 15)
       .on('click', (event: any) => this.mouseClick(event));
   }
 
@@ -138,7 +141,10 @@ export class WaveformComponent implements OnInit {
     // );
     // let x_coordinates = +WaveformData[index].x_value;
 
-    let x_coordinates = +WaveformData[this.cursor_A_postion].x_value;
+    let x_coordinates =
+      +WaveformData[
+        event.target.id === 'A' ? this.cursor_A_postion : this.cursor_B_postion
+      ].x_value;
 
     console.log('coordinates x', x_coordinates);
     //index of first, right-side-band
