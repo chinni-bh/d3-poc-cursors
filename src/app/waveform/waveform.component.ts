@@ -224,6 +224,7 @@ export class WaveformComponent implements OnInit {
       .on('end', (d: any) => {})
       .on('drag', (d: any) => {
         //to get the selected point
+        console.log('dxdy', d.dx, d.dy);
 
         var x0 = this.x.invert(d.x);
         // var y0 = this.y.invert(d.y);
@@ -249,9 +250,12 @@ export class WaveformComponent implements OnInit {
         let currentCoordinates =
           WaveformData[d3.bisectCenter(this.X, this.x.invert(n))];
 
-        let diffInXvalues = +updatedCoordinates.x_value - +currentCoordinates.x_value;
+        let diffInXvalues =
+          +updatedCoordinates.x_value - +currentCoordinates.x_value;
         console.log('diff ', diffInXvalues);
+
         this.deltaForSideband += d.dx + diffInXvalues;
+
         // let actualPostionsOfSideBands = [];
         arr._groups[0].forEach((node: any) => {
           console.log(node.x.baseVal.value);
@@ -274,6 +278,7 @@ export class WaveformComponent implements OnInit {
         // arr
         //   .attr('x', this.x(coordinates.x_value) - 6)
         //   .attr('y', this.y(coordinates.y_value) - 15);
+
         // this.svg
         //   .select("image[id='l-side-band-6']")
         //   .attr('x', this.x(coordinates.x_value) - 6)
