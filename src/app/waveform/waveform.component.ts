@@ -221,8 +221,8 @@ export class WaveformComponent implements OnInit {
         //   d.dy
         // );
       })
-      .on('end', (d: any) => {})
-      .on('drag', (d: any) => {
+      .on('drag', (d: any) => {})
+      .on('end', (d: any) => {
         //to get the selected point
         console.log('dxdy', d.dx, d.dy);
 
@@ -253,8 +253,9 @@ export class WaveformComponent implements OnInit {
         let diffInXvalues =
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
         console.log('diff ', diffInXvalues);
+        console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
 
-        this.deltaForSideband += d.dx + diffInXvalues;
+        this.deltaForSideband -= diffInXvalues;
 
         // let actualPostionsOfSideBands = [];
         arr._groups[0].forEach((node: any) => {
