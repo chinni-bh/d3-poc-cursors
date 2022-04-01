@@ -26,8 +26,8 @@ export class WaveformComponent implements OnInit {
   Y: any;
   cursor_readout: any;
   basic_cursor_A: any;
-  cursor_A_postion: number = 400;
-  cursor_B_postion: number = 500;
+  cursor_A_postion: number = 300;
+  cursor_B_postion: number = 320;
   basic_cursor_B: any;
   current_cursor: any;
   c_id: number = 0;
@@ -50,6 +50,7 @@ export class WaveformComponent implements OnInit {
     this.Y = WaveformData.map((data) => data.y_value);
     this.initSvg();
     this.initAxis();
+
     this.drawAxis();
     this.drawLine();
     this.renderCursor();
@@ -161,13 +162,17 @@ export class WaveformComponent implements OnInit {
       +WaveformData[
         id_extension === 'a' ? this.cursor_A_postion : this.cursor_B_postion
       ].x_value;
-    console.log('coordinates x', x_coordinates);
+    console.log('Base Band', x_coordinates);
     //index of first, right-side-band
-    let index1 = d3.bisectCenter(this.X, x_coordinates + this.deltaForSideband);
-    let nextXValSideBand = x_coordinates + this.deltaForSideband;
+    let nextXValSideBand = x_coordinates; //x_coordinates + this.deltaForSideband;
+    let indexOfNextSideBand = 0; //d3.bisectCenter(this.X, nextXValSideBand);
 
-    while (nextXValSideBand < this.X[this.X.length - 1]) {
-      console.log(index1, nextXValSideBand);
+    while (
+      nextXValSideBand + this.deltaForSideband <
+      this.X[this.X.length - 1]
+    ) {
+      nextXValSideBand += this.deltaForSideband;
+      indexOfNextSideBand = d3.bisectCenter(this.X, nextXValSideBand);
       this.svg
         .append('g')
         .selectAll('.cursor')
@@ -178,17 +183,23 @@ export class WaveformComponent implements OnInit {
         .attr('id', 'r-side-band-' + sideBandIdIndex++)
         .style('width', '10px')
         .style('height', '10px')
-        .attr('x', this.x(WaveformData[index1].x_value) - 5)
-        .attr('y', this.y(WaveformData[index1].y_value) - 5)
+        .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
+        .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5)
         .on('click', (event: any) => this.rightSideBandClick(event));
-      nextXValSideBand += this.deltaForSideband;
-      index1 = d3.bisectCenter(this.X, nextXValSideBand);
+      console.log(
+        'r-side-band-' + (sideBandIdIndex - 1),
+        ' \n next x-vlaue',
+        nextXValSideBand,
+        '\n WaveformIndex-Next sideband: ',
+        WaveformData[indexOfNextSideBand].x_value
+      );
     }
 
-    index1 = d3.bisectCenter(this.X, x_coordinates + this.deltaForSideband);
-    let prevXValSideBand = x_coordinates - this.deltaForSideband;
-    while (prevXValSideBand > this.X[0]) {
-      index1 = d3.bisectCenter(this.X, prevXValSideBand);
+    let prevXValSideBand = x_coordinates;
+    indexOfNextSideBand = 0;
+    while (prevXValSideBand - this.deltaForSideband > this.X[0]) {
+      prevXValSideBand -= this.deltaForSideband;
+      indexOfNextSideBand = d3.bisectCenter(this.X, prevXValSideBand);
       this.svg
         .append('g')
         .selectAll('.cursor')
@@ -199,12 +210,19 @@ export class WaveformComponent implements OnInit {
         .attr('id', 'l-side-band-' + sideBandIdIndex++)
         .style('width', '10px')
         .style('height', '10px')
-        .attr('x', this.x(WaveformData[index1].x_value) - 5)
-        .attr('y', this.y(WaveformData[index1].y_value) - 5)
+        .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
+        .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5)
         .on('click', (event: any) => this.leftSideBandClick(event));
-      prevXValSideBand -= this.deltaForSideband;
+      console.log(
+        'l-side-band-' + (sideBandIdIndex - 1),
+        ' \n prev x-vlaue',
+        prevXValSideBand,
+        '\n WaveformIndex-Next sideband: ',
+        indexOfNextSideBand
+      );
     }
-
+    let startX = 0,
+      endX = 0;
     let drag = d3
       .drag()
       .on('start', (d: any) => {
@@ -220,47 +238,45 @@ export class WaveformComponent implements OnInit {
         //   ' \nd.dy',
         //   d.dy
         // );
-      })
-      .on('drag', (d: any) => {})
-      .on('end', (d: any) => {
-        //to get the selected point
-        console.log('dxdy', d.dx, d.dy);
-
         var x0 = this.x.invert(d.x);
         // var y0 = this.y.invert(d.y);
         let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
+        console.log('start - ', coordinates);
+
+        startX = d.x;
+      })
+      .on('end', (d: any) => {})
+      .on('drag', (d: any) => {
+        //to get the selected point
+
+        // var x0 = this.x.invert(d.x);
+        // let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
+        // var y0 = this.y.invert(d.y);
         // console.log(WaveformData[d3.bisectCenter(this.X, x0)]);
 
         // console.log('x0', x0, 'y0', y0);
         // console.log(coordinates.x_value, coordinates.y_value);
 
+        var x0 = this.x.invert(d.x);
+        let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
+
         let arr = this.svg.selectAll("image[id*='side-band-']");
         let n = arr._groups[0][0].x.baseVal.value;
-
-        // console.log(
-        //   '\n',
-        //   WaveformData[d3.bisectCenter(this.X, this.x.invert(n))]
-        // );
-        // console.log(
-        //   '\n',
-        //   WaveformData[d3.bisectCenter(this.X, this.x.invert(d.x))]
-        // );
         let updatedCoordinates =
           WaveformData[d3.bisectCenter(this.X, this.x.invert(d.x))];
         let currentCoordinates =
-          WaveformData[d3.bisectCenter(this.X, this.x.invert(n))];
+          WaveformData[d3.bisectCenter(this.X, this.x.invert(startX))];
 
-        let diffInXvalues =
+        let diffInXvalues = //startX - d.x;
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
-        console.log('diff ', diffInXvalues);
         console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
+        console.log('startX - d.x:  ', startX - d.x);
 
-        this.deltaForSideband -= diffInXvalues;
+        this.deltaForSideband += diffInXvalues;
 
-        // let actualPostionsOfSideBands = [];
         arr._groups[0].forEach((node: any) => {
-          console.log(node.x.baseVal.value);
-          console.log(node.id);
+          // console.log(node.x.baseVal.value);
+          // console.log(node.id);
           let updatedCoordinates1 =
             WaveformData[
               d3.bisectCenter(
@@ -270,12 +286,14 @@ export class WaveformComponent implements OnInit {
                 ].x_value + diffInXvalues
               )
             ];
+
           this.svg
             .select("image[id='" + node.id + "']")
             .attr('x', this.x(updatedCoordinates1.x_value) - 6)
             .attr('y', this.y(updatedCoordinates1.y_value) - 15);
-          console.log(updatedCoordinates1);
+          // console.log(updatedCoordinates1);
         });
+
         // arr
         //   .attr('x', this.x(coordinates.x_value) - 6)
         //   .attr('y', this.y(coordinates.y_value) - 15);
