@@ -138,21 +138,14 @@ export class WaveformComponent implements OnInit {
     // }).left;
   }
 
-  public renderNewCursor() {
-    // this.cursor_A_postion += 10;
-  }
-
-  renderSideBands(x_coordinate: number) {
+  renderSideBands(x_coordinate: number, deltaForSideband: number) {
     let sideBandIdIndex = 0;
     // throw new Error('Method not implemented.');
     let nextXValSideBand = x_coordinate; //x_coordinate + this.deltaForSideband;
     let indexOfNextSideBand = 0; //d3.bisectCenter(this.X, nextXValSideBand);
 
-    while (
-      nextXValSideBand + this.deltaForSideband <
-      this.X[this.X.length - 1]
-    ) {
-      nextXValSideBand += this.deltaForSideband;
+    while (nextXValSideBand + deltaForSideband < this.X[this.X.length - 1]) {
+      nextXValSideBand += deltaForSideband;
       indexOfNextSideBand = d3.bisectCenter(this.X, nextXValSideBand);
       this.svg
         .append('g')
@@ -166,7 +159,6 @@ export class WaveformComponent implements OnInit {
         .style('height', '10px')
         .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
         .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5);
-      // .on('click', (event: any) => this.rightSideBandClick(event));
       console.log(
         'r-side-band-' + (sideBandIdIndex - 1),
         ' \n next x-vlaue',
@@ -178,8 +170,8 @@ export class WaveformComponent implements OnInit {
 
     let prevXValSideBand = x_coordinate;
     indexOfNextSideBand = 0;
-    while (prevXValSideBand - this.deltaForSideband > this.X[0]) {
-      prevXValSideBand -= this.deltaForSideband;
+    while (prevXValSideBand - deltaForSideband > this.X[0]) {
+      prevXValSideBand -= deltaForSideband;
       indexOfNextSideBand = d3.bisectCenter(this.X, prevXValSideBand);
       this.svg
         .append('g')
@@ -193,7 +185,6 @@ export class WaveformComponent implements OnInit {
         .style('height', '10px')
         .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
         .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5);
-      // .on('click', (event: any) => this.leftSideBandClick(event));
       console.log(
         'l-side-band-' + (sideBandIdIndex - 1),
         ' \n prev x-vlaue',
@@ -203,27 +194,10 @@ export class WaveformComponent implements OnInit {
       );
     }
     let startX = 0,
-      endX = 0;
+      delta = deltaForSideband;
     let drag = d3
       .drag()
       .on('start', (d: any) => {
-        // d3.select(this).raise().classed('active', true);
-        // console.log(
-        //   d.type,
-        //   ' : \nd.x',
-        //   d.x,
-        //   ' \nd.y,',
-        //   d.y,
-        //   ' \nd.dx',
-        //   d.dx,
-        //   ' \nd.dy',
-        //   d.dy
-        // );
-        var x0 = this.x.invert(d.x);
-        // var y0 = this.y.invert(d.y);
-        let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
-        console.log('start - ', coordinates);
-
         startX = d.x;
       })
       .on('end', (d: any) => {
@@ -234,27 +208,12 @@ export class WaveformComponent implements OnInit {
 
         let diffInXvalues = //startX - d.x;
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
-        console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
-        console.log('startX - d.x:  ', startX - d.x);
-        console.log('diffInXvalues: ', diffInXvalues);
-        this.deltaForSideband += diffInXvalues;
+        // console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
+        // console.log('startX - d.x:  ', startX - d.x);
+        // console.log('diffInXvalues: ', diffInXvalues);
+        // deltaForSideband += diffInXvalues;
       })
       .on('drag', (d: any) => {
-        //to get the selected point
-
-        // var x0 = this.x.invert(d.x);
-        // let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
-        // var y0 = this.y.invert(d.y);
-        // console.log(WaveformData[d3.bisectCenter(this.X, x0)]);
-
-        // console.log('x0', x0, 'y0', y0);
-        // console.log(coordinates.x_value, coordinates.y_value);
-
-        // var x0 = this.x.invert(d.x);
-        // let coordinates = WaveformData[d3.bisectCenter(this.X, x0)];
-
-        // let n = arr._groups[0][0].x.baseVal.value;
-        // let arr = this.svg.selectAll("image[id*='side-band-']");
         let updatedCoordinates =
           WaveformData[d3.bisectCenter(this.X, this.x.invert(d.x))];
         let currentCoordinates =
@@ -262,49 +221,18 @@ export class WaveformComponent implements OnInit {
 
         let diffInXvalues = //startX - d.x;
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
-        console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
-        console.log('startX - d.x:  ', startX - d.x);
-        console.log('diffInXvalues: ', diffInXvalues);
-        let delta = this.deltaForSideband + diffInXvalues;
+        // console.log('UC', updatedCoordinates, 'CC', currentCoordinates);
+        // console.log('startX - d.x:  ', startX - d.x);
+        // console.log('diffInXvalues: ', diffInXvalues);
+        this.deltaForSideband = delta + diffInXvalues;
 
         this.svg.selectAll("image[id*='side-band-']").remove();
-
-        // arr._groups[0].forEach((node: any) => {
-        //   // console.log(node.x.baseVal.value);
-        //   // console.log(node.id);
-        //   let updatedCoordinates1 =
-        //     WaveformData[
-        //       d3.bisectCenter(
-        //         this.X,
-        //         +WaveformData[
-        //           d3.bisectCenter(this.X, this.x.invert(node.x.baseVal.value))
-        //         ].x_value + diffInXvalues
-        //       )
-        //     ];
-
-        //   this.svg
-        //     .select("image[id='" + node.id + "']")
-        //     .attr('x', this.x(updatedCoordinates1.x_value) - 6)
-        //     .attr('y', this.y(updatedCoordinates1.y_value) - 15);
-        //   // console.log(updatedCoordinates1);
-        // });
-
-        // arr
-        //   .attr('x', this.x(coordinates.x_value) - 6)
-        //   .attr('y', this.y(coordinates.y_value) - 15);
-
-        // this.svg
-        //   .select("image[id='l-side-band-6']")
-        //   .attr('x', this.x(coordinates.x_value) - 6)
-        //   .attr('y', this.y(coordinates.y_value) - 15);
+        this.renderSideBands(x_coordinate, this.deltaForSideband);
       });
-
     this.svg.selectAll("image[id*='side-band-']").call(drag);
   }
 
   public mouseClick = (event: any) => {
-    let sideBandIdIndex = 0;
-
     let id_extension = '';
     if (event.target.id === 'cursor-a') {
       id_extension = 'a';
@@ -314,53 +242,6 @@ export class WaveformComponent implements OnInit {
         id_extension === 'a' ? this.cursor_A_postion : this.cursor_B_postion
       ].x_value;
     console.log('Base Band', x_coordinate);
-    //index of first, right-side-band
-    this.renderSideBands(x_coordinate);
+    this.renderSideBands(x_coordinate, this.deltaForSideband);
   };
-
-  public ToggleEnable() {
-    let harmonic_index = 0;
-    // let index_1:any,index_2:any;
-    this.isHarmonic = !this.isHarmonic;
-    let c = 1;
-    let image_link: string = '';
-    let harmonic_cursor;
-    this.cursor_point.subscribe((value: any) => {
-      if (this.isHarmonic) {
-        this.svg.selectAll('basic').remove();
-        c = 1;
-        harmonic_index = 0;
-        if (this.c_id == 0) {
-          image_link = '../../assets/starburst.svg';
-        } else {
-          image_link = '../../assets/machine.svg';
-        }
-        // console.log(this.X.length);
-
-        while (harmonic_index < 2000) {
-          harmonic_index = d3.bisectCenter(this.X, value * c);
-          harmonic_cursor = this.svg
-            .append('g')
-            .append('image')
-            .attr('class', 'basic')
-            .attr('xlink:href', image_link)
-            .style('width', '10px')
-            .style('height', '10px')
-            .attr('x', this.x(WaveformData[harmonic_index].x_value) - 5)
-            .attr('y', this.y(WaveformData[harmonic_index].y_value) - 5);
-          console.log(
-            'X:',
-            WaveformData[harmonic_index].x_value,
-            'Y:',
-            WaveformData[harmonic_index].y_value
-          );
-          c++;
-        }
-      }
-    });
-  }
-
-  public ToggleCursor() {
-    this.c_id = this.c_id ^ 1;
-  }
 }
