@@ -16,7 +16,7 @@ import { ThisReceiver } from '@angular/compiler';
   styleUrls: ['./waveform.component.scss'],
 })
 export class WaveformComponent implements OnInit {
-  private margin = { top: 20, right: 20, bottom: 30, left: 50 };
+  private margin = { top: 20, right: 20, bottom: 30, left: 30 };
   private width: number;
   private height: number;
   private x: any;
@@ -26,8 +26,8 @@ export class WaveformComponent implements OnInit {
   Y: any;
   cursor_readout: any;
   basic_cursor_A: any;
-  cursor_A_postion: number = 300;
-  cursor_B_postion: number = 320;
+  cursor_A_postion: number = 130;
+  cursor_B_postion: number = 150;
   basic_cursor_B: any;
   current_cursor: any;
   c_id: number = 0;
@@ -36,7 +36,7 @@ export class WaveformComponent implements OnInit {
   isHarmonic: boolean = false;
   private line: d3Shape.Line<[number, number]> | undefined;
 
-  deltaForSideband = 2;
+  deltaForSideband = 5;
   bisect: any;
 
   constructor() {
@@ -46,8 +46,8 @@ export class WaveformComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.X = WaveformData.map((data) => data.x_value);
-    this.Y = WaveformData.map((data) => data.y_value);
+    this.X = SpectrumData.map((data) => data.x_value);
+    this.Y = SpectrumData.map((data) => data.y_value);
     this.initSvg();
     this.initAxis();
 
@@ -70,8 +70,8 @@ export class WaveformComponent implements OnInit {
   private initAxis() {
     this.x = d3Scale.scaleLinear().range([0, this.width]);
     this.y = d3Scale.scaleLinear().range([this.height, 0]);
-    this.x.domain(d3Array.extent(WaveformData, (d) => d.x_value));
-    this.y.domain(d3Array.extent(WaveformData, (d) => d.y_value));
+    this.x.domain(d3Array.extent(SpectrumData, (d) => d.x_value));
+    this.y.domain(d3Array.extent(SpectrumData, (d) => d.y_value));
   }
 
   private drawAxis() {
@@ -95,12 +95,12 @@ export class WaveformComponent implements OnInit {
 
     this.svg
       .append('path')
-      .datum(WaveformData)
+      .datum(SpectrumData)
       .attr('class', 'line')
       .attr('d', this.line)
-      .style('fill', 'none')
-      .style('stroke', 'black')
-      .style('stroke-width', '0.5');
+      .style('fill', 'red')
+      .style('stroke', 'blue')
+      .style('stroke-width', '1');
   }
 
   private renderCursor() {
@@ -114,8 +114,8 @@ export class WaveformComponent implements OnInit {
       .attr('id', 'cursor-a')
       .style('width', '12px')
       .style('height', '30px')
-      .attr('x', this.x(WaveformData[this.cursor_A_postion].x_value) - 5)
-      .attr('y', this.y(WaveformData[this.cursor_A_postion].y_value) - 5)
+      .attr('x', this.x(SpectrumData[this.cursor_A_postion].x_value) - 5)
+      .attr('y', this.y(SpectrumData[this.cursor_A_postion].y_value) - 5)
       .on('click', (event: any) => this.mouseClick(event));
 
     this.basic_cursor_B = this.svg
@@ -128,8 +128,8 @@ export class WaveformComponent implements OnInit {
       .attr('id', 'cursor-b')
       .style('width', '13px')
       .style('height', '30px')
-      .attr('x', this.x(WaveformData[this.cursor_B_postion].x_value) - 6)
-      .attr('y', this.y(WaveformData[this.cursor_B_postion].y_value) - 15)
+      .attr('x', this.x(SpectrumData[this.cursor_B_postion].x_value) - 6)
+      .attr('y', this.y(SpectrumData[this.cursor_B_postion].y_value) - 15)
       .on('click', (event: any) => this.mouseClick(event));
 
     // This allows to find the closest X index of the mouse:
@@ -157,14 +157,14 @@ export class WaveformComponent implements OnInit {
         .attr('id', 'r-side-band-' + sideBandIdIndex++)
         .style('width', '10px')
         .style('height', '10px')
-        .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
-        .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5);
+        .attr('x', this.x(SpectrumData[indexOfNextSideBand].x_value) - 5)
+        .attr('y', this.y(SpectrumData[indexOfNextSideBand].y_value) - 5);
       console.log(
         'r-side-band-' + (sideBandIdIndex - 1),
         ' \n next x-vlaue',
         nextXValSideBand,
         '\n WaveformIndex-Next sideband: ',
-        WaveformData[indexOfNextSideBand].x_value
+        SpectrumData[indexOfNextSideBand].x_value
       );
     }
 
@@ -183,8 +183,8 @@ export class WaveformComponent implements OnInit {
         .attr('id', 'l-side-band-' + sideBandIdIndex++)
         .style('width', '10px')
         .style('height', '10px')
-        .attr('x', this.x(WaveformData[indexOfNextSideBand].x_value) - 5)
-        .attr('y', this.y(WaveformData[indexOfNextSideBand].y_value) - 5);
+        .attr('x', this.x(SpectrumData[indexOfNextSideBand].x_value) - 5)
+        .attr('y', this.y(SpectrumData[indexOfNextSideBand].y_value) - 5);
       console.log(
         'l-side-band-' + (sideBandIdIndex - 1),
         ' \n prev x-vlaue',
@@ -202,9 +202,9 @@ export class WaveformComponent implements OnInit {
       })
       .on('end', (d: any) => {
         let updatedCoordinates =
-          WaveformData[d3.bisectCenter(this.X, this.x.invert(d.x))];
+          SpectrumData[d3.bisectCenter(this.X, this.x.invert(d.x))];
         let currentCoordinates =
-          WaveformData[d3.bisectCenter(this.X, this.x.invert(startX))];
+          SpectrumData[d3.bisectCenter(this.X, this.x.invert(startX))];
 
         let diffInXvalues = //startX - d.x;
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
@@ -215,9 +215,9 @@ export class WaveformComponent implements OnInit {
       })
       .on('drag', (d: any) => {
         let updatedCoordinates =
-          WaveformData[d3.bisectCenter(this.X, this.x.invert(d.x))];
+          SpectrumData[d3.bisectCenter(this.X, this.x.invert(d.x))];
         let currentCoordinates =
-          WaveformData[d3.bisectCenter(this.X, this.x.invert(startX))];
+          SpectrumData[d3.bisectCenter(this.X, this.x.invert(startX))];
 
         let diffInXvalues = //startX - d.x;
           +updatedCoordinates.x_value - +currentCoordinates.x_value;
@@ -238,7 +238,7 @@ export class WaveformComponent implements OnInit {
       id_extension = 'a';
     }
     let x_coordinate =
-      +WaveformData[
+      +SpectrumData[
         id_extension === 'a' ? this.cursor_A_postion : this.cursor_B_postion
       ].x_value;
     console.log('Base Band', x_coordinate);
